@@ -1,0 +1,34 @@
+* SMLのコミュニティ事情
+Basis ライブラリ
+
+SML family
+http://sml-family.org/
+https://github.com/SMLFamily
+SMLFamily/BasisLibrary
+https://github.com/SMLFamily/BasisLibrary
+github standardml
+https://github.com/standardml/smackage
+https://github.com/finrod/smbt
+
+
+* Smackage
+** 概念
+** ソース
+** ビルド
+** 使い方
+** SML/NJ
+** MLton
+** SML#
+** 自前sourceの作り方
+
+* SMLのビルド周り
+つらいよねー。
+
+* SMBT
+** 機能紹介
+** 記法
+** サンプル
+
+Smackage向けにパッケージ作るならsmbt使った方がいいよねって話。
+
+PreMLと統合したら少し楽になるんじゃないって話。
