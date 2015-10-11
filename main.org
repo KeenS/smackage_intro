@@ -1,14 +1,20 @@
 * はじめに
 こんにちは。κeenです。Lisp(主にCommon Lisp)とML(主にSML)が好きな人です。仕事ではScalaを書いてます。
+この記事はSMLを少しは書いたことがある人向けに書かれています。
+
+
+
 新しい言語を始めるにあたって、ある程度まで進むと必要になってくる知識は「パッケージ管理をどうするか」及びそれに付随して「ビルドをどうするか」だと思います。
 ということでSMLのパッケージ管理ツールのSmackageとビルドツールのsmbtを紹介したいと思います。
 
 * SMLのコミュニティ事情
-SMLはご存知の通りSML '90やSML '98の仕様を実装しているものならSMLになるので世の中に多数のSML処理系が存在します。
+SMLはご存知の通りSML '90やSML '97の仕様を実装しているものならSMLになるので世の中に多数のSML処理系が存在します。
 SMLはその仕様の厳密さからか研究用途で使われることが多いようで、処理系毎に研究の成果を反映した独自の機能を持っていてそれがSMLの魅力の1つでもあります。
 しかしその反面ユーザーのコミュニティはあまり発達しなかったようで、継続的にSMLのライブラリを書いたり業務でSMLを使っている人はほぼ皆無なようです。
 ただ、コミュニティがないかと言うとそういうこともなく、処理系の開発者などが集って作っているSML Familyというコミュニティが存在します。
+
 http://sml-family.org/
+
 https://github.com/SMLFamily
 
 Family(語族)の名の通りSMLだけでなくSMLから派生して作られた言語も対象に入っているようです。
@@ -20,7 +26,9 @@ SMLの仕様書や後述するBasisライブラリのリファレンスなど多
 
 ** 互換性
 処理系のAPIの互換性は高いと思っています。仕様で定められているコア言語以外にもBasisというライブラリがあって、大抵の処理系でその大部分を実装しています。
+
 http://sml-family.org/Basis/
+
 このBasisライブラリは中々優秀で、文字列やリストなどの基本操作からプロセスなどのOSインターフェースまで定義されています。
 Basisライブラリを使っていればほとんどのことは出来るし、大抵の処理系でBasisライブラリを使えるという意味で互換性は高いと言えるでしょう。
 
@@ -29,6 +37,7 @@ Basisライブラリを使っていればほとんどのことは出来るし、
 また、Basisライブラリは基本的で比較的低レベルな機能を提供することを目的としているので例えばMapやSetなどのデータ構造を定義しておらず、
 自分のライブラリ達で使いたかったら処理系が独自に提供しているライブラリを使うかライブラリ毎にMapやSetを定義してそれを使うかになり、中々コードの再利用が進みません。
 この問題に関しては先述のSML FamilyでBasisライブラリを拡充する計画があったり後述のパッケージ管理システムで共通化を図ったり改善の方向にあります。
+
 SMLFamily/BasisLibrary
 https://github.com/SMLFamily/BasisLibrary
 
@@ -67,33 +76,232 @@ Common Lispと同じくヒープイメージのダンプはサポートしてい
 *** 他の処理系たち
 SML#はREPLとコンパイラ両方をサポートしており、分割コンパイル、簡単に書けるC FFIなど優れた機能があります。
 スレッド機能としてはサポートしていませんがC FFIでpthreadを呼び出しても安全なのでそれを使うのを推奨するという中々すごいことをやっています。
-他にも幾つか拡張機能はあるのですが中々に遅い処理系なのでそこが玉に瑕ですね。
+他にも幾つか拡張機能はあるのですが中々に遅い処理系なのでそこが玉に瑕ですね。バランスがとれてるしCも簡単に呼べるので私はよく使います。
 
-Moscow MLは
+Moscow MLはCaml Lightをフォークして作られた処理系っぽい？OCamlくらいの扱いやすさと思うといいでしょう。ちょっと気になってます。
 
-github standardml
-https://github.com/standardml/smackage
-https://github.com/finrod/smbt
+MLkitはリージョン推論なる機能を取り入れ、GCによるStop the Worldがほとんどない即応性の高い処理系です。x86でしか動かないので私は試せてません。
+
+などなど様々な処理系があります。
 
 
 * Smackage
-** 概念
-** ソース
-** ビルド
-** 使い方
-** SML/NJ
-** MLton
-** SML#
-** 自前sourceの作り方
+smackageはSMLのパッケージ管理システムで、バージョンを含めた依存関係解決、ソースコード取得、管理などをやってくれます。ビルドに関しては特に定めておらず、パッケージ毎のやり方に任せているようです。
 
-* SMLのビルド周り
-つらいよねー。
+ソースコードはこちらから入手出来ます。
+https://github.com/standardml/smackage
+
+余談ですがこのstandardmlのorganizationは多数のSMLのライブラリを公開しているので一度覗いてみると良いと思います。
+
+ビルドはREADMEに書いてある通り、MLtonかSML/NJかSML#が必要です。
+
+#+BEGIN_SRC sh
+export SMACKAGE_HOME=~/.smackage
+export PATH="$PATH:$SMACKAGE_HOME/bin"
+make mlton
+DESTDIR=$SMACKAGE_HOME make install
+#+END_SRC
+
+でインストール完了です。 =export SMACKAGE_HOME=~/.smackage= と =export PATH ="$PATH:$SMACKAGE_HOME/bin"\= はシェルの初期化ファイルにも書き足しておきましょう。
+
+
+ヘルプを見てみましょう。
+
+
+#+BEGIN_EXAMPLE
+Smackage 1.3.0
+Usage: smackage <command> [args]
+Commands, with <required> and [optional] arguments:
+	exec <name> [version] <cmd ...>	Runs `cmd ...' in the specified
+					package's directory
+	get <name> [version]		Obtain the named package
+	help				Display this usage and exit
+	info <name> [version]		Display package information.
+	list				List installed packages
+	make <name> [version] [args...]	Runs `make [args ...]' in the
+					specified package's directory
+	pathinfo <name> <version>	Outputs <name>'s filesystem path
+	refresh				Refresh the package index
+	search <name>			Find an appropriate package
+	source <name> <protocol> <url>	Add a smackage source to sources.local
+	update 				Update all packages
+	unsource <name>			Remove a source from sources.local
+
+#+END_EXAMPLE
+
+主に使うのは =search= と =get= でしょうか。 =smackage search ''\= で全てのパッケージをリスト出来ます。ちょっと使ってみましょう。
+
+#+BEGIN_EXAMPLE
+$ smackage search doc
+smldoc 0.9.0 (from git git://github.com/standardml/SMLDoc.git)
+smldoc 0.9.1 (from git git://github.com/standardml/SMLDoc.git)
+$ smackage get smldoc
+No major version specified, picked v0.
+Selected `smldoc 0.9.1'.
+Repository is updated
+Package `smldoc 0.9.1' downloaded.
+$ smackage info smldoc
+Candidates:
+smldoc 0.9.0
+
+smldoc 0.9.1 (installed)
+
+provides: smldoc 0.9.0
+description:  The SMLSharp documentation generator as a stand-alone package
+upstream-version:  0.90
+upstream-url:  http://www.pllab.riec.tohoku.ac.jp/smlsharp/?SMLDoc
+maintainer:  Jacob Harris Cryer Kragh
+
+$ cd $(smackage pathinfo smldoc v0.9.1)
+$ ls
+LICENSE
+Makefile
+Makefile.in
+README.txt
+SMLFormat
+SMLNJ_LICENSE
+bin
+commonrule
+configure
+doc
+example
+makesml
+mllex
+mlyacc
+package
+smldoc.cm
+smldoc.smackspec
+smlnj-lib
+src
+$ less README.txt
+#+END_EXAMPLE
+のように使っていきます。
+
+使い方はライブラリそれぞれなのでREADMEを参照した方が確実でしょう。
+因みにsmackageには =exec= や =make= のサブコマンドがあるのでライブラリの使い方を知っているなら一々cdせずともsmackageコマンドだけで完結出来ます。
+
+** インストールしたライブラリの使い方
+処理系毎にライブラリを読みにいくパスの設定方法が異なるので各自でやりましょう（丸投げ）。因みにsmackageのREADMEには各種処理系のセットアップ方法が載っているのでそこを参照して下さい。
+
+** sourceの増やし方
+ところでこのsmackageにはセントラルレポジトリ的なものがありません。smackageに同梱されている =sources= というファイルに定義されているものだけが初期状態で使えます。
+もちろんそれだけでは不便なので自分で増やす方法もちゃんとあります。 =smackage source= です。
+
+#+BEGIN_EXAMPLE
+$ smackage source package_name git git://github.com/some/repo.git
+$ smackage refresh
+$ smackage install package_name
+#+END_EXAMPLE
+
+のように使います。repoには/直下に package_name.smackspecがないとインストールは出来てしまいますがその後は中途半端にしか動かないようです。
+
+** こぼれ話
+smackage info smackage してみましょう。
+
+#+BEGIN_EXAMPLE
+provides: smackage 1.4.0
+description:  Smackage, a simple Standard ML package manager
+maintainer:  Gian Perrone <gian dot perrone at gmail dot com>
+maintainer:  Robert J. Simmons <robsimmons at gmail dot com>
+maintainer:  Michael Sullivan 
+keywords:  package manager
+bug-url:  https://github.com/standardml/smackage/issues
+platform:  mlton
+build:  make mlton
+install:  mv bin/smackage ../../../bin/smackage
+platform:  win+smlnj
+build:  make win+smlnj
+install:  mv bin/smackage ../../../bin/smackage
+platform:  smlnj
+build:  make smlnj
+install:  mv bin/smackage ../../../bin/smackage
+platform:  smlsharp
+build:  make smlsharp
+install:  mv bin/smackage ../../../bin/smackage
+platform:  polyml
+build:  make polyml
+install:  mv bin/smackage ../../../bin/smackage
+#+END_EXAMPLE
+
+どうやら処理系毎のビルド方法とインストール方法を定義しているようです。今のところこれを使える機能はないのですが将来実装予定なのかもしれません。
 
 * SMBT
-** 機能紹介
+さて、先程もビルド方法は処理系によって全然違うと書きました。
+今までは複数の処理系でコンパイル出来るようにするにはその処理系ごとのビルドファイルを書いて、READMEなりにそれぞれのビルド方法を書くしかありませんでした。
+処理系毎のビルド方法やビルドファイルの記法を調べないといけないので大変な作業でした。
+smbt(Standard ML Build Tool)を使えば少しは大変さが緩和されるかもしれません。
+
+https://github.com/finrod/smbt
+
+smbtは処理系毎のビルド方法の差異を吸収すべく作られたビルドツールで独自の記法を持ちます。
+また、smackageとも連携しており、ビルド定義ファイルの中に依存パッケージを書くだけでビルド時に依存パッケージを取得してくれます。
+
+他にはコンパイル時のオプションを指定したりFFI用のCのファイルも定義出来たり継続的ビルドをしたり、あるいはプロジェクトのファイルをロードした状態でREPLを開始出来たり色々な機能があります。
+
+とりあえずhelpを載せておきますね。
+
+#+BEGIN_EXAMPLE
+smbt 0.3.2
+Usage: smbt [options] [build-file] <target>
+Options:
+  -c, --continuous	Re-run <target> on source modification.
+  -h, --help		Display this usage information and exit.
+  -i, --interactive	Enter an interactive prompt (if possible).
+  -n, --noexec		Output commands without actually executing them.
+  -v, --version		Output version information and exit.
+  -V			Enable verbose output.
+#+END_EXAMPLE
+
+
 ** 記法
-** サンプル
+なんとなくSMLを書く人なら馴染めそうな記法になってます。例えばsmbt自体のビルドは次のように定義されています（一部抜粋）。
 
-Smackage向けにパッケージ作るならsmbt使った方がいいよねって話。
+#+BEGIN_EXAMPLE
+target smlnj
+    pkg cmlib v1 source 
+    pkg parcom v1 parcom
+    
+    sources
+       src/config.sml
+       src/parser.sml
+       src/elaborate.sml
+       src/version.sml
+       src/watch.sml
+       src/fsutil.sml
+       src/compiler.sml
+       src/smackage.sml
+       src/mlton.sml
+       src/smlnj.sml
+       src/polyml.sml
+       src/moscowml.sml
+       src/plan.sml
+       src/main.sml
+    end
 
-PreMLと統合したら少し楽になるんじゃないって話。
+    pre hooks
+       echo hello
+    end
+
+    option compiler = smlnj
+    option exportFn = Smbt.main
+    option heapImg = bin/.heapimg
+    option rlwrap = true
+
+    option output = bin/smbt-nj
+end
+#+END_EXAMPLE
+
+解説すると、 =target name ... end= の間にビルド定義を書いていきます。 =pkg= で始まる行がsmackageの依存の定義。 =sources ... end= でビルドファイルの定義をリストします。順序を保ちます。
+=pre hooks ... end= にはビルド前に処理するシェルスクリプトを書きます。 =post hooks= もありますよ。 
+=option= で始まる行にはコンパイル情報を書いていきます。 =compiler= には =mlton= 、 =smlnj= 、 =moscowml= 、 =polyml= 、 =smlsharp= 、 =mlkit= を選べます。
+コンパイラを選んだら他のオプションはコンパイラによって異なります。細かい部分はREADMEを読んでみて下さい。FFIの書き方とかも載っています。
+
+
+** つらい話とか今後の展望とか
+smbtを使うとoption以外は統一的に書けるのですがソースセットは同じで違うコンパイラについて定義しようとするとソースセットをコピペしないといけない模様？
+
+また、それをやったとしてもソース単位でのコンディショナルコンパイルしか出来ないので処理系互換レイヤーとかは少し書きづらいですね。
+行や式単位でのコンディショナルコンパイルが欲しいところですがsmlの仕様ではそういうことは出来ないのでプリプロセッサが必要になります。
+premlというプリプロセッサ自体は存在しているのですがどちらかというとモナド記法などのシンタックスシュガーのためのものなのでプルリクを送ってマージされるかは微妙な所ですね。
+
+いずれにせよ、smbtとプリプロセッサの統合自体は悪くないので一旦そのプルリクを送ってから次のアクションを考えるのが良いのかなと思う次第です。
